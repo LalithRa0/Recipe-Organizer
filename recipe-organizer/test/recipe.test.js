@@ -1,25 +1,35 @@
+// test/recipe.test.js
 import chai from 'chai';
 import chaiHttp from 'chai-http';
-import server from '../server.js';
-import jwt from 'jsonwebtoken';
+import server from '../server.js'; 
+import { expect } from 'chai';
+import User from '../models/user.js';
+import Recipe from '../models/recipe.js';
 
 chai.use(chaiHttp);
-const expect = chai.expect;
 
 describe('Recipe', () => {
   let token;
 
-  before((done) => {
-    chai.request(server)
-      .post('/api/users/login')
+  before(async () => {
+    await User.sync({ force: true });
+    await Recipe.sync({ force: true });
+
+    const res = await chai.request(server)
+      .post('/api/register')
       .send({
         username: 'testuser',
         password: 'password123'
-      })
-      .end((err, res) => {
-        token = res.body.token; // Assuming the token is in the response body
-        done();
       });
+
+    const loginRes = await chai.request(server)
+      .post('/api/login')
+      .send({
+        username: 'testuser',
+        password: 'password123'
+      });
+
+    token = loginRes.body.token;
   });
 
   it('should add a recipe', (done) => {
@@ -28,9 +38,9 @@ describe('Recipe', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({
         title: 'Test Recipe',
-        ingredients: 'Ingredients',
-        instructions: 'Instructions',
-        category: 'Category',
+        ingredients: 'Test Ingredients',
+        instructions: 'Test Instructions',
+        category: 'Test Category',
         imageUrl: 'http://example.com/image.jpg'
       })
       .end((err, res) => {
